@@ -8,12 +8,14 @@ solver = pl.CPLEX_CMD(path=path_to_cplex)
 """
 Déclaration des variables
 """
-# Truc a déterminer
+
 V = 10
 # Pas utile
 #E = 15
 M = 15
 p = [[random.randint(1, M) for i in range(V)] for j in range(V)]
+
+# Création des bornes de temps
 borne_a_b = [[8, 17] for i in range(V)]
 v0 = 0
 vf = 0

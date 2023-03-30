@@ -1,5 +1,10 @@
 # Amazon Last-Mile Routing Research Project
 
+## Groupe
+* Mohamed HAMDI ABDALA
+* Ghita OUNSS
+* Valentin BUCHON
+
 ## Introduction
 Le Amazon Last Mile Routing Research Challenge 1 est hébergé par Amazon.com et soutenu scientifiquement
 par une équipe de chercheurs du MIT Center for Transportation & Logistics. L’objectif principal du défi est de
@@ -10,3 +15,4 @@ des solutions au problème de séquenç̧age d’itinéraire qui surpassent l’
 ## Outils
 * Cplex
 * Pulp
+* Networkx
