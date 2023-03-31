@@ -1,112 +1,46 @@
-import pulp as pl
-import networkx as nx
-import random
-import matplotlib.pyplot as plt
+from pulp import *
 
-# Modifier le PATH vers CPLEX ici
-path_to_cplex = r'C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio2211\\cplex\\bin\\x64_win64\\cplex.exe'
-solver = pl.CPLEX_CMD(path=path_to_cplex)
-"""
-Déclaration des variables
-"""
+# Création des variables de décision xi,j
+x = LpVariable.dicts("x", [(i,j) for (i,j) in E], lowBound=0, upBound=1, cat=LpBinary)
 
-V = 10
-# Pas utile
-#E = 15
-M = 15
-p = [[random.randint(1, M) for i in range(V)] for j in range(V)]
+# Création des variables de temps de passage ti
+t = LpVariable.dicts("t", V, lowBound=0)
 
-# Création des bornes de temps
-borne_a_b = [[8, 17] for i in range(V)]
-v0 = 0
-vf = 0
+# Création du problème d'optimisation
+prob = LpProblem("Problème de livraison", LpMinimize)
 
-"""
-Création du graphe
-"""
-G = nx.Graph()
+# Ajout de la fonction objectif
+prob += lpSum([x[(i,j)] * pi[(i,j)] for (i,j) in E])
 
-G.add_nodes_from([i for i in range(V)])
-G.add_edges_from([(random.randint(0, V), random.randint(0, V)) for _ in range(V)])
+# Contrainte : chaque point de livraison est visité une fois
+for i in V:
+    if i != vf:
+        prob += lpSum([x[(i,j)] for j in V if (i,j) in E]) == 1
 
-# print de vérification
-print(G.number_of_nodes())
-print(G.number_of_edges())
-print(list(G.edges))
-print(list(G.nodes))
+# Contrainte : symétrie du graphe
+for i in V:
+    if i not in [v0, vf]:
+        prob += lpSum([x[(i,j)] for j in V if (i,j) in E]) == lpSum([x[(j,i)] for j in V if (j,i) in E])
 
-# Pour print et sauvegarder un dessin de graph
+# Contrainte pour v0
+prob += lpSum([x[(v0,j)] for j in V if (v0,j) in E]) - lpSum([x[(j,v0)] for j in V if (j,v0) in E]) == 1
 
-# nx.draw(G,with_labels=True)
-# plt.savefig("filename.png")
+# Contrainte pour vf
+prob += lpSum([x[(i,vf)] for i in V if (i,vf) in E]) - lpSum([x[(vf,j)] for j in V if (vf,j) in E]) == -1
 
-"""
-Création du PL
-"""
-# # Variable
-# x_i_j = pl.LpVariable.dicts("if_i_in_group_j", ((i, j) for i in range(E) for j in range(E)), cat='binary')
-# t_i = pl.LpVariable.dicts("time_in_i", (i for i in range(V) ), cat='binary')
-# # Objectif
-# model = pl.LpProblem("Project", pl.LpMinimize)
-# model += pl.lpSum([p[i][j] * x_i_j[i][j] for i in range(E) for j in range(E)])
-#
-# # Contrainte 1
-# for i in range(V): # On devra virer le vf
-#     if i != vf:
-#         model += (
-#                 pl.lpSum(x_i_j[i][j] for j in range(E)) == 1,
-#         )
-#
-# # Contrainte 2
-# for j in range(V): # On devra virer le vo
-#     if i != v0:
-#         model += (
-#                 pl.lpSum(x_i_j[i][j] for i in range(E)) == 1,
-#         )
-#
-# # Contrainte 3
-# for i in range(V): # On devra virer le vf et vo
-#     if i != vf and i != v0:
-#         model += (
-#                 pl.lpSum(x_i_j[i][j] for j in range(E)) == pl.lpSum(x_i_j[j][i] for j in range(E)),
-#         )
-#
-# # Contrainte 4
-#
-# model += (
-#     pl.lpSum(x_i_j[v0][j] for j in range(E)) - pl.lpSum(x_i_j[j][v0] for j in range(E)) == 1,
-# )
-#
-# # Contrainte 5
-# model += (
-#     pl.lpSum(x_i_j[vf][j] for j in range(E)) - pl.lpSum(x_i_j[j][vf] for j in range(E)) == -1,
-# )
-#
-# # Contrainte 6
-# for i in range(V):
-#     model += (
-#         x_i_j[i][i] == 0
-#     )
-#
-# # Contrainte 7
-# for i in range(V):
-#     for j in range(V):
-#         model += (
-#             t_i[i]+ p[i][j]- t_i[j] <= M * (1 - x_i_j[i][j])
-#         )
-#
-# # Contrainte 8
-# for i in range(V):
-#     model += (
-#         t_i[i] <= borne_a_b[i][1]
-#     )
-#     model += (
-#         t_i[i] >= borne_a_b[i][0]
-#     )
-# # Contrainte 9
-# for i in range(V):
-#     for j in range(V):
-#         x in {0;1}
-# model.solve(solver)
+# Contrainte : chaque arc partant et arrivant à un même point de livraison doit être inutilisé
+for i in V:
+    prob += x[(i,i)] == 0
 
+# Contrainte : temps de passage
+for (i,j) in E:
+    prob += t[i] + pi[(i,j)] - t[j] <= M * (1 - x[(i,j)])
+    prob += a[(i,j)] <= t[i]
+    prob += t[i] <= b[(i,j)]
 
+# Contrainte : xi,j ∈ {0, 1}
+for (i,j) in E:
+    prob += x[(i,j)] in [0, 1]
+
+# Résolution du problème d'optimisation
+prob.solve()
