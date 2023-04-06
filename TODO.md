@@ -13,7 +13,7 @@ Voir les différents code de sorties :
 * 0
 * 1
 * 2
-ect..
+
 * 
 ## Threading
 Couper le calcules des séquences en fonction du nombre de thread.
