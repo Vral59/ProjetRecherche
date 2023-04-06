@@ -12,21 +12,15 @@ with open('projet recherche/model_build_inputs/route_data.json', 'r') as f:
     data = json.load(f)
 
 # listeCoor contriendra toutes les coordonées
-listeCoor = []
-element = []
-for way in data.items():
-    for stop in data[way[0]].items():
-        element.append([stop])
 
-for it in range(5, len(element), 6):
-    a, b = element[it][0]
-    for el in b:
-        lat, lng = b[el]["lat"], b[el]["lng"]
-        listeCoor.append([lat, lng])
+listeCoor = [[stop['lat'], stop['lng']] for stop in
+             [list(data[r]['stops'].values())[0] for r in [way[0] for way in data.items()]]]
 
 """
 Trie et affiche pour une ville donnee les différents cluster
 """
+
+
 def printClVille(latmin, latmax, lngmin, lngmax, listeCoor, labelName):
     cl = []
     for coor in listeCoor:
@@ -35,7 +29,9 @@ def printClVille(latmin, latmax, lngmin, lngmax, listeCoor, labelName):
 
     # print(len(cl))
     random.shuffle(cl)
-    X2 = np.array(cl[0:1000])
+    # On prend 1000 ou moins points
+    m = min(1000, len(cl))
+    X2 = np.array(cl[0:m])
     color = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
     kmeans = KMeans(n_clusters=8, random_state=4, n_init="auto").fit(X2)
     cluster = kmeans.labels_
@@ -47,25 +43,27 @@ def printClVille(latmin, latmax, lngmin, lngmax, listeCoor, labelName):
     plt.show()
 
 
-# Ville Verte :
+# Je me suis planté les couleurs des villes ont changé donc c'est pas totalement vrai comme nom
 
-printClVille(32, 35, -125, -110, listeCoor, "Green city")
+# Los angeles :
 
-# Ville Bleu clair :
+printClVille(32, 35, -125, -110, listeCoor, "Los Angeles")
 
-printClVille(45, 48, -130, -110, listeCoor, "Cyan city")
+# Austin :
 
-# Ville Bleu :
+printClVille(45, 48, -130, -110, listeCoor, "Austin")
 
-printClVille(29, 32, -100, -90, listeCoor, "Blue city")
+# Seatle :
 
-# Ville Violet :
+printClVille(29, 32, -100, -90, listeCoor, "Seatle")
 
-printClVille(40, 45, -100, -80, listeCoor, "Violet city")
+# Chicago :
 
-# Ville Rouge :
+printClVille(40, 45, -100, -80, listeCoor, "Chicago")
 
-printClVille(40, 45, -79, -60, listeCoor, "Red city")
+# Boston :
+
+printClVille(40, 45, -79, -60, listeCoor, "Boston")
 
 # On va print une parties pour voir ce que ça donne, on devrait recuperer les 5 villes
 
