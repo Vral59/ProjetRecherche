@@ -14,7 +14,7 @@ with open('projet recherche/model_build_inputs/route_data.json', 'r') as f:
 # listeCoor contriendra toutes les coordonées
 
 listeCoor = [[stop['lat'], stop['lng']] for stop in
-             [list(data[r]['stops'].values())[0] for r in [way[0] for way in data.items()]]]
+             [list(data['RouteID_15baae2d-bf07-4967-956a-173d4036613f']['stops'].values())[0] ]]
 
 """
 Trie et affiche pour une ville donnee les différents cluster
@@ -30,10 +30,10 @@ def printClVille(latmin, latmax, lngmin, lngmax, listeCoor, labelName):
     # print(len(cl))
     random.shuffle(cl)
     # On prend 1000 ou moins points
-    m = min(1000, len(cl))
+    m = min(10000, len(cl))
     X2 = np.array(cl[0:m])
     color = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
-    kmeans = KMeans(n_clusters=8, random_state=4, n_init="auto").fit(X2)
+    kmeans = KMeans(n_clusters=5, random_state=4, n_init="auto").fit(X2)
     cluster = kmeans.labels_
 
     for i in range(len(X2)):
