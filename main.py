@@ -12,6 +12,7 @@ def main():
 
     # On travail pour une route fixé pour le moment
     road = "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
+    # road = "RouteID_0016bc70-cb8d-48b0-aa55-8ee50bdcdb59"
     pathToTimeRoad = 'road/firstRoad.json'
     pathToRoad = 'projet recherche/model_build_inputs/route_data.json'
     pathToPackage = 'projet recherche/model_build_inputs/package_data.json'
