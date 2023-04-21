@@ -41,15 +41,15 @@ def ERP(A, B):
 """
 calcule le score de la route proposé 
 :param
-A : séquence réalisée
+A : séquence réalisée par amazon
 B : séquence soumise
 
 :return
-SD * ERPnorm / ERPe
+erp
 """
 def routeScore(A, B):
     #sd = SD(A, B)
     erp = ERP(A, B)
-    print(erp)
-    return erp/len(B)
+    return erp
+
 

@@ -10,7 +10,7 @@ Dans ce fichier main, nous lions tous le projet
 def main():
     # Définition des chemins
 
-    # On travail pour une route fixé pour le moment
+    # On travaille pour une route fixé pour le moment
     road = "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
     # road = "RouteID_0016bc70-cb8d-48b0-aa55-8ee50bdcdb59"
     pathToTimeRoad = 'road/firstRoad.json'
@@ -46,6 +46,18 @@ def main():
     cheminFinal.append(cllast)
 
     # TODO : utiliser eval.py et le solvePl.py
+
+    # Voici comment tester la distance, voir Distance de Levenshtein
+    A = ["A", "B", "C", "D", "E"]
+    B = ["A", "R", "C", "D", "E"]
+    resultat = eval.routeScore(A, B)
+    print("La distance entre A et B est :", resultat)
+
+    A = ["A", "B", "C", "D", "E"]
+    B = ["E", "A", "B", "C", "D"]
+    resultat = eval.routeScore(A, B)
+    print("La distance entre A et B est :", resultat)
+
     return 0
 
 
