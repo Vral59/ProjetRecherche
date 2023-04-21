@@ -11,7 +11,7 @@ path_to_cplex = r'C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio2211\\cplex\\bin\\x6
 Traitetement des donnees
 """
 
-with open('projet recherche/model_build_inputs/package_data.json', 'r') as f:
+with open('../projet recherche/model_build_inputs/package_data.json', 'r') as f:
   data = json.load(f)
 
 
@@ -24,7 +24,7 @@ V = range(1,n)
 label = [chr(i+64) for i in V]
 G = nwx.DiGraph()
 G.add_nodes_from(V,labels = label)
-G.add_weighted_edges_from([(i,j,(i+j)/12) for i in V for j in V if i!=j])
+G.add_weighted_edges_from([(i,j,i+j) for i in V for j in V if i!=j])
 
 
 p = {}
@@ -38,8 +38,8 @@ p = {edge: G.edges[edge]['weight'] for edge in G.edges}
 # plt.savefig('test_graphe_resultat')
 
 
-a = {i : 8 for i in V}
-b = {i : 17 for i in V}
+a = {i : 0 for i in V}
+b = {i : 1000 for i in V}
 M = 30
 
 v0 = 1

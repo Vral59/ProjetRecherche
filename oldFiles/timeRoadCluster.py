@@ -13,11 +13,12 @@ Dans ce fichier nous créons la matrice d'adjacance des temps entres chaque stop
 
 def openFile():
 
-    with open('firstRoad.json', 'r') as f:
+    with open('../road/firstRoad.json', 'r') as f:
         data = json.load(f)
 
-    with open('projet recherche/model_build_inputs/route_data.json', 'r') as f:
+    with open('../projet recherche/model_build_inputs/route_data.json', 'r') as f:
         zoneRoad = json.load(f)
+
     return data,zoneRoad
 
 
@@ -217,7 +218,7 @@ def main():
             df.at[el, 'cluster Kmeans'] = -1
 
     plt.title("Position point livraison les cluster sont kmeans avec chemin les reliant")
-
+    print(df)
     # Récupération du point le plus proche de la station
     firstPoint = findFirstPoint(station, name)
 

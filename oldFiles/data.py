@@ -8,13 +8,19 @@ import random
 Dans ce script nous récupérons la liste des coordonnées de tous les arrêts
 """
 
-with open('projet recherche/model_build_inputs/route_data.json', 'r') as f:
+with open('../projet recherche/model_build_inputs/route_data.json', 'r') as f:
     data = json.load(f)
+
+with open('../projet recherche/model_build_inputs/package_data.json', 'r') as f:
+    package = json.load(f)
+
+road = "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
+
 
 # listeCoor contriendra toutes les coordonées
 
 listeCoor = [[stop['lat'], stop['lng']] for stop in
-             [list(data['RouteID_15baae2d-bf07-4967-956a-173d4036613f']['stops'].values())[0] ]]
+             [list(data['RouteID_15baae2d-bf07-4967-956a-173d4036613f']['stops'].values()) ]]
 
 """
 Trie et affiche pour une ville donnee les différents cluster
@@ -47,23 +53,23 @@ def printClVille(latmin, latmax, lngmin, lngmax, listeCoor, labelName):
 
 # Los angeles :
 
-printClVille(32, 35, -125, -110, listeCoor, "Los Angeles")
+#printClVille(32, 35, -125, -110, listeCoor, "Los Angeles")
 
 # Austin :
 
-printClVille(45, 48, -130, -110, listeCoor, "Austin")
+#printClVille(45, 48, -130, -110, listeCoor, "Austin")
 
 # Seatle :
 
-printClVille(29, 32, -100, -90, listeCoor, "Seatle")
+#printClVille(29, 32, -100, -90, listeCoor, "Seatle")
 
 # Chicago :
 
-printClVille(40, 45, -100, -80, listeCoor, "Chicago")
+#printClVille(40, 45, -100, -80, listeCoor, "Chicago")
 
 # Boston :
 
-printClVille(40, 45, -79, -60, listeCoor, "Boston")
+#printClVille(40, 45, -79, -60, listeCoor, "Boston")
 
 # On va print une parties pour voir ce que ça donne, on devrait recuperer les 5 villes
 
@@ -73,8 +79,8 @@ color = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'w']
 kmeans = KMeans(n_clusters=5, random_state=4, n_init="auto").fit(X)
 cluster = kmeans.labels_
 
-for i in range(len(X)):
-    plt.scatter(X[i, 0], X[i, 1], c=color[cluster[i]])
-
-plt.title("5 differents cities")
-plt.show()
+# for i in range(len(X)):
+#     plt.scatter(X[i, 0], X[i, 1], c=color[cluster[i]])
+#
+# plt.title("5 differents cities")
+# plt.show()

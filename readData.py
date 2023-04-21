@@ -1,5 +1,6 @@
 import json
 import pandas as pd
+from sklearn.cluster import KMeans
 
 """
 Dans ce fichier nous allons lire les données et créer les dataframe
@@ -9,7 +10,7 @@ Dans ce fichier nous allons lire les données et créer les dataframe
 Ouvre les json en question
 
 :param
-pathToRoad : Temps entre chaque arrêt des routes ex: 'firstRoad.json'
+pathToTimeRoad : Temps entre chaque arrêt des routes ex: 'firstRoad.json'
 pathToRoad : Routes utilisé par le conducteur ex: 'projet recherche/model_build_inputs/route_data.json'
 pathToPackage : Chemin vers le fichier contenenant les informations des colis ex: package_data.json
 
@@ -43,8 +44,8 @@ zoneRoad : Dictionnaire sur les infos des stops par route
 
 :return
 name : Liste des noms des stops
-df : le Data frame contenant les temps pour aller de chaque stop à un autre, la latitude, la longitude, le zode et
-si c'est une station ou non
+df : le Data frame contenant les temps pour aller de chaque stop à un autre, la latitude, la longitude, le zone,
+si c'est une station ou non et son numéro de cluster par kmeans
 """
 
 
@@ -77,6 +78,29 @@ def creationDataFrame(road, data, zoneRoad):
     # On récupère les prefixes des zone_id
     cluster = [el.split(".")[0] if str(el) != 'nan' else float("NaN") for el in zoneList]
     df["cluster"] = cluster
+
+    # Creation des cluster avec Kmeans, on pose nbCl = le nombre de zone
+    # l'algo ne fonctionne pas si y'a que 2 cluster donc on fixe le minimum à 3
+    # TODO :  Ameliorer cette partie de creation de cluster avec kmeans
+    uniqueCluster = list(set(df["cluster"].tolist()))
+    nbCl = len(uniqueCluster) - 1
+    if nbCl <= 2:
+        nbCl = 3
+    station = df.loc[df["isStation"] == True]
+    dfWithoutStation = df.drop(columns=[station.index[0], 'isStation', 'lat', 'lng', 'zone_id', 'cluster'],
+                               index=[station.index[0]])
+    kmeans = KMeans(n_clusters=nbCl, n_init=100, init="k-means++").fit(dfWithoutStation)
+    newCluster = kmeans.labels_
+    cpt = 0
+    df["cluster Kmeans"] = [0] * len(name)
+    for el in name:
+        if not df.loc[el, "isStation"]:
+            lat = df.loc[el, "lat"]
+            lng = df.loc[el, "lng"]
+            df.at[el, 'cluster Kmeans'] = newCluster[cpt]
+            cpt += 1
+        else:
+            df.at[el, 'cluster Kmeans'] = -1
 
     return name, df
 

@@ -1,46 +1,52 @@
-from pulp import *
+import eval
+import clusteringData
+import readData
+import solvePl
 
-# Création des variables de décision xi,j
-x = LpVariable.dicts("x", [(i,j) for (i,j) in E], lowBound=0, upBound=1, cat=LpBinary)
+"""
+Dans ce fichier main, nous lions tous le projet
+"""
 
-# Création des variables de temps de passage ti
-t = LpVariable.dicts("t", V, lowBound=0)
+def main():
+    # Définition des chemins
 
-# Création du problème d'optimisation
-prob = LpProblem("Problème de livraison", LpMinimize)
+    # On travail pour une route fixé pour le moment
+    road = "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
+    pathToTimeRoad = 'road/firstRoad.json'
+    pathToRoad = 'projet recherche/model_build_inputs/route_data.json'
+    pathToPackage = 'projet recherche/model_build_inputs/package_data.json'
 
-# Ajout de la fonction objectif
-prob += lpSum([x[(i,j)] * pi[(i,j)] for (i,j) in E])
+    # Lecture des donnnées
+    data, zoneRoad, package = readData.openFile(pathToTimeRoad, pathToRoad, pathToPackage)
+    name, df = readData.creationDataFrame(road, data, zoneRoad)
+    dfPackage = readData.creationDataframePackage(package)
 
-# Contrainte : chaque point de livraison est visité une fois
-for i in V:
-    if i != vf:
-        prob += lpSum([x[(i,j)] for j in V if (i,j) in E]) == 1
+    # Récupération de la ligne de la station
+    station = df.loc[df["isStation"] == True]
+    # Récupération du nombre de cluster, ils sont numerotes de 0 à X donc le nombre est X + 1
+    nbCl = df["cluster Kmeans"].max() + 1
 
-# Contrainte : symétrie du graphe
-for i in V:
-    if i not in [v0, vf]:
-        prob += lpSum([x[(i,j)] for j in V if (i,j) in E]) == lpSum([x[(j,i)] for j in V if (j,i) in E])
+    # Récupération du point le plus proche de la station
+    firstPoint = clusteringData.findFirstPoint(station, name)
 
-# Contrainte pour v0
-prob += lpSum([x[(v0,j)] for j in V if (v0,j) in E]) - lpSum([x[(j,v0)] for j in V if (j,v0) in E]) == 1
+    # Récupération du point le plus proche de la station qui n'est pas dans le même cluster que le 1er
+    lastPoint = clusteringData.findLastPoint(station, name, firstPoint, df)
 
-# Contrainte pour vf
-prob += lpSum([x[(i,vf)] for i in V if (i,vf) in E]) - lpSum([x[(vf,j)] for j in V if (vf,j) in E]) == -1
 
-# Contrainte : chaque arc partant et arrivant à un même point de livraison doit être inutilisé
-for i in V:
-    prob += x[(i,i)] == 0
+    clfirst = df.loc[firstPoint, "cluster Kmeans"]
+    cllast = df.loc[lastPoint, "cluster Kmeans"]
 
-# Contrainte : temps de passage
-for (i,j) in E:
-    prob += t[i] + pi[(i,j)] - t[j] <= M * (1 - x[(i,j)])
-    prob += a[(i,j)] <= t[i]
-    prob += t[i] <= b[(i,j)]
+    # Création de la matrice d'adjacence en temps entre chaque cluster
+    matriceTime = clusteringData.genPathMatrix(nbCl,df)
 
-# Contrainte : xi,j ∈ {0, 1}
-for (i,j) in E:
-    prob += x[(i,j)] in [0, 1]
+    # création du chemin final entre les cluster
+    cheminFinal = clusteringData.findPathCluster(clfirst, cllast, nbCl, matriceTime)
+    cheminFinal.insert(0, clfirst)
+    cheminFinal.append(cllast)
 
-# Résolution du problème d'optimisation
-prob.solve()
+    # TODO : utiliser eval.py et le solvePl.py
+    return 0
+
+
+if __name__ == "__main__":
+    main()
