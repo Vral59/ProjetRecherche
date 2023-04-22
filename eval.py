@@ -52,4 +52,20 @@ def routeScore(A, B):
     erp = ERP(A, B)
     return erp
 
+"""
+Exemple :
+    # Voici comment tester la distance, voir Distance de Levenshtein
+    A = ["A", "B", "C", "D", "E"]
+    B = ["A", "R", "C", "D", "E"]
+    resultat = eval.routeScore(A, B)
+    print("La distance entre A et B est :", resultat)
+
+    A = ["A", "B", "C", "D", "E"]
+    B = ["E", "A", "B", "C", "D"]
+    resultat = eval.routeScore(A, B)
+    print("La distance entre A et B est :", resultat)
+    
+La distance entre A et B est : 1
+La distance entre A et B est : 2
+"""
 

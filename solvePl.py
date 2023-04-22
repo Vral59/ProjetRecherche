@@ -85,9 +85,8 @@ def createPath(x, stopCluster, v0, vf):
     # On parcourt chaque ligne de la matrice x
     for i in range(n - 1):
         for j in range(n):
-            if x[i, j] == 1:
+            if x[path[-1], stopCluster[j]].value() == 1.0:
                 path.append(stopCluster[j])
                 # Sachant qu'il y a un seul 1 on peut break la boucle si on tombe dessus
                 break
-    path.append(vf)
     return path
