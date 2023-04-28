@@ -1,6 +1,8 @@
 import json
 import pandas as pd
 from sklearn.cluster import KMeans
+import numpy as np
+from math import *
 
 """
 Dans ce fichier nous allons lire les données et créer les dataframe
@@ -35,6 +37,56 @@ def openFile(pathToTimeRoad, pathToRoad, pathToPackage):
 
 
 """
+Algorithme d'équilibrage des kmeans, crée des cluster équilibré
+
+:param
+X : le dataset, un tableau numpy
+k : le nombre de cluster que l'on veut 
+max_iter : le nombre d'itération pour l'équilibrage
+
+:return 
+label : liste des cluster 
+"""
+
+
+def balancedKmeans(X, k, max_iters=150):
+    # calcule les cluster initiaux des kmeans++
+    kmeans = KMeans(n_clusters=k, n_init=10, init='k-means++')
+    kmeans.fit(X)
+    centers = kmeans.cluster_centers_
+    labels = kmeans.labels_
+    num_points = X.shape[0]
+    num_dims = X.shape[1]
+
+    # Créer la taille du cluster que l'on veut
+    cluster_sizes = np.ones(k) * (num_points // k)
+
+    for it in range(max_iters):
+        # Assigner chaque point à son cluster le plus proche
+        distances = np.zeros((num_points, k))
+        for i in range(num_points):
+            for j in range(k):
+                distances[i, j] = np.linalg.norm(X[i, :] - centers[j, :])
+        new_labels = np.argmin(distances, axis=1)
+
+        # Réassigner les points à chaque cluster pour équilibrer
+        for i in range(num_points):
+            old_label = labels[i]
+            new_label = new_labels[i]
+            if cluster_sizes[new_label] < num_points // k:
+                labels[i] = new_label
+                cluster_sizes[old_label] -= 1
+                cluster_sizes[new_label] += 1
+
+        # Mettre à jour le centre des cluster
+        for j in range(k):
+            if cluster_sizes[j] > 0:
+                centers[j, :] = np.mean(X[labels == j, :], axis=0)
+
+    return labels
+
+
+"""
 Créeation du dataframe générale permettant le travail sur l'ensemble des données
 
 :param
@@ -50,7 +102,7 @@ si c'est une station ou non et son numéro de cluster par kmeans
 
 
 def creationDataFrame(road, data, zoneRoad):
-    # Liste des noms des stop
+    # Liste des noms du stop
     name = list(list(data[road].values())[0])
     # Liste des latitudes de chaques point
     listelat = [stop['lat'] for stop in zoneRoad[road]['stops'].values()]
@@ -79,24 +131,15 @@ def creationDataFrame(road, data, zoneRoad):
     cluster = [el.split(".")[0] if str(el) != 'nan' else float("NaN") for el in zoneList]
     df["cluster"] = cluster
 
-    # Creation des cluster avec Kmeans, on pose nbCl = le nombre de zone
-    # l'algo ne fonctionne pas si y'a que 2 cluster donc on fixe le minimum à 3
-    # TODO :  Ameliorer cette partie de creation de cluster avec kmeans
-    uniqueCluster = list(set(df["cluster"].tolist()))
-    nbCl = len(uniqueCluster) - 1
-    if nbCl <= 2:
-        nbCl = 3
     station = df.loc[df["isStation"] == True]
     dfWithoutStation = df.drop(columns=[station.index[0], 'isStation', 'lat', 'lng', 'zone_id', 'cluster'],
-                               index=[station.index[0]])
-    kmeans = KMeans(n_clusters=nbCl, n_init=100, init="k-means++").fit(dfWithoutStation)
-    newCluster = kmeans.labels_
+                               index=[station.index[0]]).to_numpy()
+
+    newCluster = balancedKmeans(dfWithoutStation, ceil(dfWithoutStation.shape[0]/10))
     cpt = 0
     df["cluster Kmeans"] = [0] * len(name)
     for el in name:
         if not df.loc[el, "isStation"]:
-            lat = df.loc[el, "lat"]
-            lng = df.loc[el, "lng"]
             df.at[el, 'cluster Kmeans'] = newCluster[cpt]
             cpt += 1
         else:

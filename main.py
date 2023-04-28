@@ -41,6 +41,7 @@ def main():
     matriceTime = clusteringData.genPathMatrix(nbCl,df)
 
     # création du chemin final entre les cluster
+    # TODO : Appliquer un PL la dessus au lieu de l'algo utilise, le temps de calcule explose
     cheminFinal = clusteringData.findPathCluster(clfirst, cllast, nbCl, matriceTime)
     cheminFinal.insert(0, clfirst)
     cheminFinal.append(cllast)
@@ -62,18 +63,10 @@ def main():
         stopCluster = list(dfaux.index)
         print("nb points : ", len(stopCluster))
 
-        # Cette partie est utile pour voir si la résolution du problème fonctionne, cependant on ne peut utiliser tous les points
-        # A partir de 12 points cela commence à devenir trop, donc on va limiter artificiellement pour vérifier que le code fonctionne
-        # TODO : Corriger la création de la sous liste, on arrive a avoir 8 ou 9 point ce qui n'est pas normal.
-        # TODO : En envoyant une liste de 9 points pour le cluster 3, res fait une longueur de 8, il manque des points
-        stopClusterTMP = [v0]
-        stopClusterTMP = stopClusterTMP + [stopCluster[i] for i in range(8) if stopCluster[i] != v0 and stopCluster[i] != vf]
-        stopClusterTMP.append(vf)
-        # Normalement stopClusterTMP contient 10 points
-        print("len TMP = ", len(stopClusterTMP))
-        dfaux = dfaux[stopClusterTMP]
-        x, t = solvePl.solvePl(stopClusterTMP, dfaux, package, v0, vf, path_to_cplex)
-        res = solvePl.createPath(x, stopClusterTMP, v0, vf)
+        # TODO : Vérifier les boucles
+        dfaux = dfaux[stopCluster]
+        x, t = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, path_to_cplex)
+        res = solvePl.createPath(x, stopCluster, v0, vf)
         respath.append(res)
 
     print("résultat finale : ", respath)
