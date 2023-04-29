@@ -1,4 +1,7 @@
 import pulp
+from kruskal import kruskal_algo
+import random
+
 """
 Dans ce fichier nous résolvons le Pl pour des points donné
 """
@@ -22,10 +25,9 @@ t : temps d'arrivé au sommet i
 
 def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     V = [i for i in stopCluster]
-    p = {(i, j): df.loc[i, j] for i in V for j in V if i != j}
-    a = {i: 0 for i in V}
-    b = {i: 5000 for i in V}
-    M = 1000
+    p = {(i, j): df.loc[i, j] for i in V for j in V}
+    a = {i: 0 + random.randint(0, 40) for i in V}
+    b = {i: 3000 - random.randint(100, 500) for i in V}
 
     model = pulp.LpProblem('Pl_livraisons', pulp.LpMinimize)
 
@@ -34,9 +36,13 @@ def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     t = {i: pulp.LpVariable(lowBound=a[i], upBound=b[i], cat=pulp.LpContinuous, name="t_{0}".format(i)) for i in V}
 
     # Objective
-    model += pulp.lpSum(x[i, j] * p[i, j] for i in V for j in V if j != i)
+    model += pulp.lpSum(x[i, j] * p[i, j] for i in V for j in V)
 
     # constraints
+
+    # kruskal constraints
+    model += pulp.lpSum(p[i, j] * x[i, j] for i in V for j in V) >= kruskal_algo(df.to_numpy())
+
     for i in V:
         if i != vf:
             model += pulp.lpSum(x[i, j] for j in V) == 1
@@ -46,11 +52,13 @@ def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
             model += pulp.lpSum(x[i, j] for i in V) == 1
 
     for i in V:
-        if i != vf and i != v0:
-            model += pulp.lpSum(x[i, j] for j in V) == pulp.lpSum(x[j, i] for j in V)
-
-    model += pulp.lpSum(x[v0, j] for j in V) - pulp.lpSum(x[j, v0] for j in V) == 1
-    model += pulp.lpSum(x[vf, j] for j in V) - pulp.lpSum(x[j, vf] for j in V) == -1
+        aux = pulp.lpSum(x[i, j] for j in V) - pulp.lpSum(x[j, i] for j in V)
+        if i == v0:
+            model += aux == 1
+        elif i == vf:
+            model += aux == -1
+        else:
+            model += aux == 0
 
     for i in V:
         model += x[i, i] == 0
@@ -58,10 +66,23 @@ def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     for i in V:
         for j in V:
             if i != j:
-                model += t[i] + p[i, j] - t[j] <= M * (1 - x[i, j])
+                model += t[i] + p[i, j] - t[j] <= (df.to_numpy().sum() + df.to_numpy().max()) * (1 - x[i, j])
 
-    solver = pulp.CPLEX_CMD(path=path_to_cplex)
+    for i in V:
+        if a[i] is not None and b[i] is not None:
+            model += t[i] >= a[i]
+            model += t[i] <= b[i]
+
+    model += pulp.lpSum(x[i, j] for i in V for j in V) == len(stopCluster) - 1
+
+    if len(stopCluster) > 2:
+        model += x[v0, vf] == 0
+        model += x[vf, v0] == 0
+
+    solver = pulp.CPLEX_CMD(path=path_to_cplex,msg=False)
     model.solve(solver)
+    status = pulp.LpStatus[model.status]
+    print("Status du PL : ",status)
     return x, t
 
 
@@ -81,12 +102,16 @@ path : liste des sommets dans l'ordre de parcours final
 
 def createPath(x, stopCluster, v0, vf):
     path = [v0]
+    dernier = v0
     n = len(stopCluster)
     # On parcourt chaque ligne de la matrice x
     for i in range(n - 1):
         for j in range(n):
-            if x[path[-1], stopCluster[j]].value() == 1.0:
+            if x[dernier, stopCluster[j]].value() is None:
+                return path
+            elif x[dernier, stopCluster[j]].value() >= 0.99:
                 path.append(stopCluster[j])
-                # Sachant qu'il y a un seul 1 on peut break la boucle si on tombe dessus
-                break
+                dernier = stopCluster[j]
+                if dernier == vf:
+                    return path
     return path

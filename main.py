@@ -61,12 +61,14 @@ def main():
             vf = matriceTime[cheminFinal[clidx]][cheminFinal[clidx+1]][0]
         dfaux = df.loc[df["cluster Kmeans"] == cheminFinal[clidx]]
         stopCluster = list(dfaux.index)
-        print("nb points : ", len(stopCluster))
-
-        # TODO : Vérifier les boucles
+        # TODO : 3 possibiltiés : 1) Status = Optimal on a une route, 2) Status = Optimal mais pas connexe, 3) Infeasible pas de chemin
         dfaux = dfaux[stopCluster]
         x, t = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, path_to_cplex)
         res = solvePl.createPath(x, stopCluster, v0, vf)
+        if len(res) != len(stopCluster):
+            print("Le graphe résultat n'est pas connexe")
+        print("----------------------------------------")
+
         respath.append(res)
 
     print("résultat finale : ", respath)
