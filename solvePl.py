@@ -15,15 +15,17 @@ df : dataframe des temps de parcours des points entre eux
 package : dataframe des heures de livraisons
 v0 : String sommet de départ
 vf : String sommet d'arrivé
+clidx : index du cluster, utilisé pour le print
 path_to_cplex : chemin vers le solver cplex
 
 :return
 x : matrice binaire x[i,j] = 1 => on va de i à j 
 t : temps d'arrivé au sommet i
+status : status de la solution (Optimal, Infeasible)
 """
 
 
-def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
+def solvePl(stopCluster, df, package, v0, vf, clidx, path_to_cplex):
     V = [i for i in stopCluster]
     p = {(i, j): df.loc[i, j] for i in V for j in V}
     a = {i: 0 + random.randint(0, 40) for i in V}
@@ -82,8 +84,7 @@ def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     solver = pulp.CPLEX_CMD(path=path_to_cplex,msg=False)
     model.solve(solver)
     status = pulp.LpStatus[model.status]
-    print("Status du PL : ",status)
-    return x, t
+    return x, t, status
 
 
 """

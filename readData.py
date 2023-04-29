@@ -93,6 +93,8 @@ Créeation du dataframe générale permettant le travail sur l'ensemble des donn
 road : Route sur lequel on veut travailler ex : "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
 data : Dictionnaire des temps entre chaque arrêt entre chaque stops
 zoneRoad : Dictionnaire sur les infos des stops par route
+num_treads : nombre de threads dispo sur le pc
+maxClSize :  taille des clusters voulu
 
 :return
 name : Liste des noms des stops
@@ -101,9 +103,10 @@ si c'est une station ou non et son numéro de cluster par kmeans
 """
 
 
-def creationDataFrame(road, data, zoneRoad):
+def creationDataFrame(road, data, zoneRoad, num_threads, maxClSize):
     # Liste des noms du stop
     name = list(list(data[road].values())[0])
+
     # Liste des latitudes de chaques point
     listelat = [stop['lat'] for stop in zoneRoad[road]['stops'].values()]
 
@@ -135,7 +138,12 @@ def creationDataFrame(road, data, zoneRoad):
     dfWithoutStation = df.drop(columns=[station.index[0], 'isStation', 'lat', 'lng', 'zone_id', 'cluster'],
                                index=[station.index[0]]).to_numpy()
 
-    newCluster = balancedKmeans(dfWithoutStation, ceil(dfWithoutStation.shape[0]/10))
+    if ceil(dfWithoutStation.shape[0]/maxClSize) < num_threads:
+        numberCl = ceil(dfWithoutStation.shape[0]/maxClSize)
+    else:
+        numberCl = num_threads
+
+    newCluster = balancedKmeans(dfWithoutStation, numberCl)
     cpt = 0
     df["cluster Kmeans"] = [0] * len(name)
     for el in name:
