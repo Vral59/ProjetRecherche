@@ -10,7 +10,20 @@ Dans ce fichier main, nous lions tous le projet
 """
 
 """
-TODO : noter le dsicription de la fonction ici
+Résoud le PL du sous problème proposé 
+
+:param
+respath : liste qui va stocker le résultat de ce sous problème
+listStatus : liste qui stocke le status de CPLEX sur la résolution
+clidx: indice du cluster
+firstPoint: premier point après le départ de la station
+lastPoint : dernier point à visiter
+matriceTime : Matrice d'adjacence des temps de passage entre les clsuter
+cheminFinal : ordre de parcours des cluster
+df : dataframe avec les temps de trajet entre chaque stop
+nbCl : nombre de cluster
+path_to_cplex : chemin vers le solveur CPLEX
+package : dataframe des informations sur les packages
 """
 def findPathCluster(respath, listStatus, clidx, firstPoint, lastPoint, matriceTime, cheminFinal, df, nbCl, path_to_cplex, package):
     if clidx == 0:
@@ -25,7 +38,7 @@ def findPathCluster(respath, listStatus, clidx, firstPoint, lastPoint, matriceTi
     dfaux = df.loc[df["cluster Kmeans"] == cheminFinal[clidx]]
     stopCluster = list(dfaux.index)
     dfaux = dfaux[stopCluster]
-    x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, clidx, path_to_cplex)
+    x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, path_to_cplex)
     res = solvePl.createPath(x, stopCluster, v0, vf)
     respath[clidx] = res
     listStatus[clidx] = status
@@ -79,7 +92,7 @@ def main(num_threads):
     threads = []
     for clidx in range(nbCl):
         t = threading.Thread(target=findPathCluster, args=(respath, listStatus, clidx, firstPoint, lastPoint, matriceTime, cheminFinal, df, nbCl, path_to_cplex,
-                        package))
+                        dfPackage.loc[dfPackage["RouteID"] == road]))
         threads.append(t)
         t.start()
 

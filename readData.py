@@ -170,7 +170,6 @@ dfPackage : dataframe contenant les informations avec RouteID, Stop, PackageID, 
 def creationDataframePackage(package):
     # Initialiser un dictionnaire pour stocker les données
     result = {'RouteID': [], 'Stop': [], 'PackageID': [], 'start_time': [], 'end_time': []}
-
     # Parcourir chaque RouteID
     for route_id in package.keys():
         # Parcourir chaque stop associé à cette route

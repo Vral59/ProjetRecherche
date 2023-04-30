@@ -49,7 +49,6 @@ class Graph:
                 self.apply_union(parent, rank, x, y)
         res = 0
         for u, v, weight in result:
-            # print("%d - %d: %d" % (u, v, weight))
             res += weight
         return (res)
 

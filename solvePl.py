@@ -1,10 +1,57 @@
 import pulp
 from kruskal import kruskal_algo
 import random
+from datetime import timedelta
+import pandas as pd
 
 """
 Dans ce fichier nous résolvons le Pl pour des points donné
 """
+
+"""
+Donne l'heure minimum et maximum d'un dataframe, si il n'y a pas d'heure, renvoie un None
+
+:param
+df : le dataframe des packages
+
+:return
+minTime : le plus grand des temps au plus tot (None sinon)
+maxTime : le plus perit des temps au plus tard (None sinon)
+"""
+
+
+def minTimePackage(df):
+    min_time = float('inf')
+    max_time = float('-inf')
+
+    for _, row in df.iterrows():
+        start = row['start_time']
+        end = row['end_time']
+
+        if not pd.isna(start):
+            start = start.split()
+            hh, mm, ss = start[1].split(':')
+            start_time = int(hh) * 3600 + int(mm) * 60 + int(ss)
+            min_time = min(min_time, start_time)
+
+        if not pd.isna(end):
+            end = end.split()
+            hh, mm, ss = end[1].split(':')
+            end_time = int(hh) * 3600 + int(mm) * 60 + int(ss)
+            max_time = max(max_time, end_time)
+
+    if min_time == float('inf'):
+        min_time = None
+
+    if max_time == float('-inf'):
+        max_time = None
+
+    if min_time is not None and max_time is not None and not pd.isna(row['start_time']) and not pd.isna(row['end_time']):
+        if start[0] != end[0] or min_time > max_time:
+            return None, None
+
+    return min_time, max_time
+
 
 """
 Résoud le PL pour un cluster donné
@@ -15,7 +62,6 @@ df : dataframe des temps de parcours des points entre eux
 package : dataframe des heures de livraisons
 v0 : String sommet de départ
 vf : String sommet d'arrivé
-clidx : index du cluster, utilisé pour le print
 path_to_cplex : chemin vers le solver cplex
 
 :return
@@ -25,17 +71,21 @@ status : status de la solution (Optimal, Infeasible)
 """
 
 
-def solvePl(stopCluster, df, package, v0, vf, clidx, path_to_cplex):
+def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     V = [i for i in stopCluster]
     p = {(i, j): df.loc[i, j] for i in V for j in V}
-    a = {i: 0 + random.randint(0, 40) for i in V}
-    b = {i: 3000 - random.randint(100, 500) for i in V}
+    minTimeDic = {}
+    maxTimeDic = {}
+    for i in V:
+        minTime, maxTime = minTimePackage(package.loc[package["Stop"] == i])
+        minTimeDic[i] = minTime
+        maxTimeDic[i] = maxTime
 
     model = pulp.LpProblem('Pl_livraisons', pulp.LpMinimize)
 
     x = {(i, j): pulp.LpVariable(cat=pulp.LpBinary, name="x_{0}_{1}".format(i, j)) for i in V for j in V}
 
-    t = {i: pulp.LpVariable(lowBound=a[i], upBound=b[i], cat=pulp.LpContinuous, name="t_{0}".format(i)) for i in V}
+    t = {i: pulp.LpVariable(lowBound=minTimeDic[i], upBound=maxTimeDic[i], cat=pulp.LpContinuous, name="t_{0}".format(i)) for i in V}
 
     # Objective
     model += pulp.lpSum(x[i, j] * p[i, j] for i in V for j in V)
@@ -71,9 +121,9 @@ def solvePl(stopCluster, df, package, v0, vf, clidx, path_to_cplex):
                 model += t[i] + p[i, j] - t[j] <= (df.to_numpy().sum() + df.to_numpy().max()) * (1 - x[i, j])
 
     for i in V:
-        if a[i] is not None and b[i] is not None:
-            model += t[i] >= a[i]
-            model += t[i] <= b[i]
+        if minTimeDic[i] is not None and maxTimeDic[i] is not None:
+            model += t[i] >= minTimeDic[i]
+            model += t[i] <= maxTimeDic[i]
 
     model += pulp.lpSum(x[i, j] for i in V for j in V) == len(stopCluster) - 1
 
