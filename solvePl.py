@@ -62,6 +62,7 @@ df : dataframe des temps de parcours des points entre eux
 package : dataframe des heures de livraisons
 v0 : String sommet de départ
 vf : String sommet d'arrivé
+useTime : Boolean pour savoir si on utilise les contraintes de temps
 path_to_cplex : chemin vers le solver cplex
 
 :return
@@ -71,7 +72,7 @@ status : status de la solution (Optimal, Infeasible)
 """
 
 
-def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
+def solvePl(stopCluster, df, package, v0, vf, useTime, path_to_cplex):
     V = [i for i in stopCluster]
     p = {(i, j): df.loc[i, j] for i in V for j in V}
     minTimeDic = {}
@@ -115,15 +116,16 @@ def solvePl(stopCluster, df, package, v0, vf, path_to_cplex):
     for i in V:
         model += x[i, i] == 0
 
-    for i in V:
-        for j in V:
-            if i != j:
-                model += t[i] + p[i, j] - t[j] <= (df.to_numpy().sum() + df.to_numpy().max()) * (1 - x[i, j])
+    if useTime:
+        for i in V:
+            for j in V:
+                if i != j:
+                    model += t[i] + p[i, j] - t[j] <= (df.to_numpy().sum() + df.to_numpy().max()) * (1 - x[i, j])
 
-    for i in V:
-        if minTimeDic[i] is not None and maxTimeDic[i] is not None:
-            model += t[i] >= minTimeDic[i]
-            model += t[i] <= maxTimeDic[i]
+        for i in V:
+            if minTimeDic[i] is not None and maxTimeDic[i] is not None:
+                model += t[i] >= minTimeDic[i]
+                model += t[i] <= maxTimeDic[i]
 
     model += pulp.lpSum(x[i, j] for i in V for j in V) == len(stopCluster) - 1
 

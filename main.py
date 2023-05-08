@@ -26,6 +26,7 @@ path_to_cplex : chemin vers le solveur CPLEX
 package : dataframe des informations sur les packages
 """
 def findPathCluster(respath, listStatus, clidx, firstPoint, lastPoint, matriceTime, cheminFinal, df, nbCl, path_to_cplex, package):
+    useTime = True
     if clidx == 0:
         v0 = firstPoint
     else:
@@ -38,7 +39,10 @@ def findPathCluster(respath, listStatus, clidx, firstPoint, lastPoint, matriceTi
     dfaux = df.loc[df["cluster Kmeans"] == cheminFinal[clidx]]
     stopCluster = list(dfaux.index)
     dfaux = dfaux[stopCluster]
-    x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, path_to_cplex)
+    x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, useTime, path_to_cplex)
+    if status != "Optimal":
+        useTime = False
+        x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, useTime, path_to_cplex)
     res = solvePl.createPath(x, stopCluster, v0, vf)
     respath[clidx] = res
     listStatus[clidx] = status
