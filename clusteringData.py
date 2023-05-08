@@ -90,18 +90,19 @@ def trouver_points_proches(nuages1, nuages2, X):
     # Boucle sur tous les points dans le premier nuage
     for i in range(len(nuage1)):
         # Calcul de la distance entre ce point et tous les points dans le deuxième nuage
-        distances, indices = tree2.query(nuage1[i], k=len(nuage2))
+        distances, indices = tree2.query(nuage1[i], k=1)
 
-        # Boucle sur les indices des points dans le deuxième nuage
-        for j in range(len(nuage2)):
-            # Calcul de la distance entre les deux points
-            distance = X.loc[nuages1[i], nuages2[indices[j]]]
+        # Récupération de l'indice du point le plus proche dans le deuxième nuage
+        indice2 = indices
 
-            # Mise à jour des variables si la distance est plus petite que la distance minimale actuelle
-            if distance < distance_min:
-                index1 = nuages1[i]
-                index2 = nuages2[indices[j]]
-                distance_min = distance
+        # Calcul de la distance entre les deux points
+        distance = X.loc[nuages1[i], nuages2[indice2]]
+
+        # Mise à jour des variables si la distance est plus petite que la distance minimale actuelle
+        if distance < distance_min:
+            index1 = nuages1[i]
+            index2 = nuages2[indice2]
+            distance_min = distance
 
     # Renvoi des indices des deux points les plus proches et de leur distance
     return index1, index2, distance_min
