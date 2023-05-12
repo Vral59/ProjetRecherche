@@ -15,15 +15,17 @@ Ouvre les json en question
 pathToTimeRoad : Temps entre chaque arrêt des routes ex: 'firstRoad.json'
 pathToRoad : Routes utilisé par le conducteur ex: 'projet recherche/model_build_inputs/route_data.json'
 pathToPackage : Chemin vers le fichier contenenant les informations des colis ex: package_data.json
+pathToSequences : Cheminv vers le fichier contenant les sequences de Amazon
 
 :return
 data : Dictionnaire d'informations contenue dans pathToTimeRoad
 zoneRoad : Dictionnaire d'informations contenue dans pathToRoad
 package : Dictionnaire des informations contenue dans pathToPackage
+sequences : Dictionnaire des informations contenue dans pathToSequences
 """
 
 
-def openFile(pathToTimeRoad, pathToRoad, pathToPackage):
+def openFile(pathToTimeRoad, pathToRoad, pathToPackage, pathToSequences):
     with open(pathToTimeRoad, 'r') as f:
         data = json.load(f)
 
@@ -33,7 +35,9 @@ def openFile(pathToTimeRoad, pathToRoad, pathToPackage):
     with open(pathToPackage, 'r') as f:
         package = json.load(f)
 
-    return data, zoneRoad, package
+    with open(pathToSequences, 'r') as f:
+        sequences = json.load(f)
+    return data, zoneRoad, package, sequences
 
 
 """
@@ -189,3 +193,29 @@ def creationDataframePackage(package):
     # Convertir le dictionnaire en dataframe
     dfPackage = pd.DataFrame(result)
     return dfPackage
+
+"""
+Récupération des différentes séquences d'Amazon
+
+:param
+sequences : Dictionnaire contenant les informations du fichier acutal_sequences
+
+:return
+result : dataframe contenant les informations avec la route et le chemin parcouru
+"""
+def creationDateframeSequences(sequences):
+    result = pd.DataFrame(columns=['route_id', 'chemin'])
+    chemin = []
+    names = []
+    for route_id in sequences.keys():
+        names.append(route_id)
+        liste = [el for el in sequences[route_id]['actual'].items()]
+        res = [""]*(len(liste))
+        for el in liste:
+            stop, pos = el
+            res[pos] = stop
+        chemin.append(res)
+    result['route_id'] = names
+    result['chemin'] = chemin
+
+    return result

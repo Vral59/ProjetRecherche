@@ -1,3 +1,5 @@
+import copy
+
 import pulp
 from kruskal import kruskal_algo
 import random
@@ -86,6 +88,8 @@ def solvePl(stopCluster, df, package, v0, vf, useTime, path_to_cplex):
 
     x = {(i, j): pulp.LpVariable(cat=pulp.LpBinary, name="x_{0}_{1}".format(i, j)) for i in V for j in V}
 
+    f = {i: pulp.LpVariable(cat=pulp.LpInteger, name="f_{0}".format(i)) for i in range(len(stopCluster))}
+
     t = {i: pulp.LpVariable(lowBound=minTimeDic[i], upBound=maxTimeDic[i], cat=pulp.LpContinuous, name="t_{0}".format(i)) for i in V}
 
     # Objective
@@ -133,6 +137,12 @@ def solvePl(stopCluster, df, package, v0, vf, useTime, path_to_cplex):
         model += x[v0, vf] == 0
         model += x[vf, v0] == 0
 
+
+    for i in range(len(stopCluster)):
+        for j in range(len(stopCluster)):
+            if j != stopCluster.index(v0):
+                model += f[i] + x[stopCluster[i], stopCluster[j]] - (len(stopCluster)-2)*(1-x[stopCluster[i], stopCluster[j]]) <= f[j]
+
     solver = pulp.CPLEX_CMD(path=path_to_cplex,msg=False)
     model.solve(solver)
     status = pulp.LpStatus[model.status]
@@ -168,3 +178,34 @@ def createPath(x, stopCluster, v0, vf):
                 if dernier == vf:
                     return path
     return path
+
+"""
+Code mort
+Trouve tous les cycles d'un graphe non connexe (avec les contraintes du Pl)
+"""
+def findCycle(x, stopCluster, path):
+    n = len(stopCluster)
+    listeStop = list(set(copy.deepcopy(stopCluster)).symmetric_difference(path))
+    cycle = []
+    # print("path = ", path)
+    # print("stop = ", stopCluster)
+    # print("liste = ", listeStop)
+    while len(listeStop) != 0:
+        start = listeStop[0]
+        visite = [start]
+        dernier = start
+        boole = False
+        while not boole:
+            for j in range(n):
+                if x[dernier, stopCluster[j]].value() >= 0.99:
+                    visite.append(stopCluster[j])
+                    dernier = stopCluster[j]
+                    if dernier == start:
+                        cycle.append(visite)
+                        boole = True
+                        break
+        listeStop = list(set(listeStop).symmetric_difference(visite))
+        #print("-----------------")
+        #print("visite ", visite)
+        #print("boucle ", listeStop)
+    return cycle
