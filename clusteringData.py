@@ -125,7 +125,7 @@ Temps pour passer du cluster B à C = 3
 Sauf que ici on a [index1, index2, distance_min] information par position dans la matrice 
 distance_min est le temps et index1 le point dnas le 1er cluster et index2 le point d'arrivé dans le cluster suivant
 """
-def genPathMatrix(nbCl,df):
+def genPathMatrix(nbCl,df ):
     matrixRes = [[[0, 0, 0] for _ in range(nbCl)] for _ in range(nbCl)]
     for cl1 in range(nbCl):
         for cl2 in range(nbCl):

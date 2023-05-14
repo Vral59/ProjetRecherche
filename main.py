@@ -6,7 +6,7 @@ import readData
 import solvePl
 import multiprocessing
 import threading
-
+import numpy as np
 
 """
 Dans ce fichier main, nous lions tous le projet
@@ -39,16 +39,29 @@ def findPathCluster(respath, listStatus, clidx, firstPoint, lastPoint, matriceTi
         vf = lastPoint
     else:
         vf = matriceTime[cheminFinal[clidx]][cheminFinal[clidx + 1]][0]
+
     dfaux = df.loc[df["cluster Kmeans"] == cheminFinal[clidx]]
     stopCluster = list(dfaux.index)
     dfaux = dfaux[stopCluster]
+    # Si le point de départ et d'arrivé sont identiques, on pose vf = le point le plus proche de v0
+    if v0 == vf:
+        min = np.inf
+        for stop in stopCluster:
+            if stop != v0 and dfaux.loc[v0][stop] <= min:
+                min = dfaux.loc[v0][stop]
+                vf = stop
+
     x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, useTime, path_to_cplex)
     if status != "Optimal":
         useTime = False
         x, t, status = solvePl.solvePl(stopCluster, dfaux, package, v0, vf, useTime, path_to_cplex)
 
     res = solvePl.createPath(x, stopCluster, v0, vf)
-
+    if status != "Optimal":
+        print("Impossible de résoudre ce cluster n° :", clidx)
+        print(dfaux)
+        print("1st point ", v0)
+        print("last point ", vf)
     respath[clidx] = res
     listStatus[clidx] = status
 
@@ -58,11 +71,6 @@ Fonction principal du projet
 def main(num_threads):
     # Définition des chemins
     path_to_cplex = r'C:\\Program Files\\IBM\\ILOG\\CPLEX_Studio2211\\cplex\\bin\\x64_win64\\cplex.exe'
-    # On travaille pour une route fixé pour le moment
-    #road = "RouteID_00143bdd-0a6b-49ec-bb35-36593d303e77"
-    #road = "RouteID_0016bc70-cb8d-48b0-aa55-8ee50bdcdb59"
-    #pathToTimeRoad = 'road/firstRoad.json'
-    #pathToTimeRoad = 'road/secondRoad.json'
     pathToTimeRoad = 'projet recherche/model_build_inputs/travel_times.json'
     pathToRoad = 'projet recherche/model_build_inputs/route_data.json'
     pathToPackage = 'projet recherche/model_build_inputs/package_data.json'
@@ -72,9 +80,10 @@ def main(num_threads):
     data, zoneRoad, package, sequences = readData.openFile(pathToTimeRoad, pathToRoad, pathToPackage, pathToSequences)
     dfChemin = readData.creationDateframeSequences(sequences)
     roads = dfChemin["route_id"].tolist()
-    for road in roads[:20]:
+    for road in roads[:10]:
         print("********************* Calcule d'une route *********************")
-        name, df = readData.creationDataFrame(road, data, zoneRoad, num_threads, 25)
+        name, df = readData.creationDataFrame(road, data, zoneRoad, num_threads, 20)
+        print("nombre de point :" , len(name))
         dfPackage = readData.creationDataframePackage(package)
         # Récupération de la ligne de la station
         station = df.loc[df["isStation"] == True]
@@ -92,8 +101,10 @@ def main(num_threads):
         cllast = df.loc[lastPoint, "cluster Kmeans"]
 
         # Création de la matrice d'adjacence en temps entre chaque cluster
+        print("Génération de matrice Time")
         matriceTime = clusteringData.genPathMatrix(nbCl,df)
 
+        print("On trouve le chemin ")
         # création du chemin final entre les cluster
         cheminFinal = clusteringData.findPathCluster(clfirst, cllast, nbCl, matriceTime)
         cheminFinal.insert(0, clfirst)
@@ -103,6 +114,7 @@ def main(num_threads):
         respath = [None]*nbCl
         listStatus = [None] * nbCl
         threads = []
+        print("Début résolution des PL :")
         for clidx in range(nbCl):
             t = threading.Thread(target=findPathCluster, args=(respath, listStatus, clidx, firstPoint, lastPoint, matriceTime, cheminFinal, df, nbCl, path_to_cplex,
                             dfPackage.loc[dfPackage["RouteID"] == road]))
@@ -146,6 +158,7 @@ def main(num_threads):
             print("Temps de Amazon :", tempsAmazon)
         else :
             print("Pas posssible")
+    print("C'est fini")
     return 0
 
 

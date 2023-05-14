@@ -53,7 +53,7 @@ label : liste des cluster
 """
 
 
-def balancedKmeans(X, k, max_iters=150):
+def balancedKmeans(X, k, max_iters=300):
     # calcule les cluster initiaux des kmeans++
     kmeans = KMeans(n_clusters=k, n_init=10, init='k-means++')
     kmeans.fit(X)
